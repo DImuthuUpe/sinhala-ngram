@@ -1,0 +1,83 @@
+<html>
+<head>
+	<script type="text/javascript" src="js/jqplot/jquery.min.js"></script>
+	<script type="text/javascript" src="js/jqplot/jquery.jqplot.js"></script>
+	<script type="text/javascript" src="js/jqplot/excanvas.min.js"></script>
+	<script type="text/javascript" src="js/jqplot/excanvas.js"></script>
+	<script type="text/javascript" src="js/jqplot/plugins/jqplot.canvasTextRenderer.min.js"></script>
+	<script type="text/javascript" src="js/jqplot/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+</head>
+<body>
+	<%
+		var searchString = request.getParameter("searchString");
+		var url = "http://localhost:7474/db/data/cypher";
+		var data = {
+			"query" : "match (w:Word) where w.value='මහින්ද' return id(w)"
+		};
+		
+		var optionalHeaders = {
+			"Content-Type": "application/json","Accept":"application/json"};
+		
+		var resultJSON = post(url, stringify(data) ,optionalHeaders);
+		var id = JSON.parse(resultJSON.data).data;
+		print(id);
+		if(id.length>0){
+			id=id[0][0];
+		}else{
+			id=-1;
+		}
+		if(id>=0){
+
+			data = {
+				"query" : "match (a:Article)-[t:CONTAIN]->(s:Sentence)-[r:HAS]->(w:Word) where id(w)="+id+" return w.value,a.year,a.month,count(w) order by a.year,a.month"
+			};
+			//print(id);
+		
+			resultJSON = post(url, stringify(data) ,optionalHeaders);
+			//print(resultJSON);
+			var dataArray =JSON.parse(resultJSON.data).data;
+			var points=[];
+			for (var i=0;i<dataArray.length;i++){
+				points[i]=dataArray[i][3];
+			}
+		//print(dataArray[0][0]);
+		//}
+	%>
+	<script type="text/javascript">
+		$(document).ready(function(){
+  			var plot1 = $.jqplot ('chart1', [<%print(points);}%>]);
+		});
+	</script>
+	<form action="index.jag">
+	<table>
+		<tr>
+			<td>
+			<h1>UOM Sinhala N-gram viewer</h1>
+			</td>
+		</tr>
+	<table>
+	<hr/>
+	<table>
+		<tr>
+			<td>
+				Graph these sinhala words
+			</td>
+			<td>
+				<input type="text" name="searchString" size="100" />
+			</td>
+
+		</tr>
+	</table>
+	<table>
+		<tr>
+			<td>Time period from <td>
+			<td><input type="text" value="2010"/></td>
+			<td>to</td>
+			<td><input type="text" value="2011"/></td>
+			<td><input type="submit" value="Search"/></td>
+		</tr>
+	</table>
+	</form>
+	<div id='chart1'/>
+</body>
+</html>
